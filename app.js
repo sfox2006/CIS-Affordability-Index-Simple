@@ -76,6 +76,15 @@ function formatPercent(value) {
   return `${sign}${value.toFixed(1)}%`;
 }
 
+function formatChangeSinceStart(value) {
+  if (!Number.isFinite(value)) {
+    return "--";
+  }
+  const change = value - 100;
+  const sign = change > 0 ? "+" : "";
+  return `${sign}${change.toFixed(1)}%`;
+}
+
 function setMetricTone(element, value, invert = false) {
   element.classList.remove("metric-positive", "metric-negative", "metric-neutral");
   if (!Number.isFinite(value)) {
@@ -190,9 +199,15 @@ function updateStatCards(filteredPoints) {
   elements.cpiRange.textContent = rangeLabel;
   elements.wpiRange.textContent = wpiAvailable ? rangeLabel : "No wage comparison is available before Dec 2010.";
   elements.gapCpiRange.textContent = "Price change minus overall inflation.";
-  elements.gapWpiRange.textContent = wpiAvailable
-    ? "Price change minus wage growth."
-    : "Wage comparisons are only available from Dec 2010 onward.";
+  if (!wpiAvailable) {
+    elements.gapWpiRange.textContent = "Wage comparisons are only available from Dec 2010 onward.";
+  } else if (gapWpi < 0) {
+    elements.gapWpiRange.textContent = "Yes, it has become more affordable.";
+  } else if (gapWpi > 0) {
+    elements.gapWpiRange.textContent = "No, it has become less affordable.";
+  } else {
+    elements.gapWpiRange.textContent = "No change in affordability.";
+  }
 
   [elements.selectedChange, elements.cpiChange, elements.wpiChange].forEach((element) => {
     element.classList.remove("metric-positive", "metric-negative");
@@ -264,7 +279,18 @@ function renderChart(target, filteredPoints, config) {
         }
         const x = margin.left + xStep * index;
         const y = margin.top + plotHeight - ((point[key] - minValue) / range) * plotHeight;
-        return `<circle class="chart-point ${config.classNames[key]}" cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="2.75"></circle>`;
+        const label = key === "selectedValue"
+          ? config.primaryLabel
+          : (config.secondaryLabelMap?.[key] || key);
+        const title = `${formatQuarter(point.date)}\n${label}: ${formatChangeSinceStart(point[key])} since start date`;
+        return `
+          <g>
+            <circle class="chart-point-hit" cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="8">
+              <title>${title}</title>
+            </circle>
+            <circle class="chart-point ${config.classNames[key]}" cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="2.75"></circle>
+          </g>
+        `;
       })
       .join("")
   )).join("");
@@ -422,12 +448,16 @@ function updateView() {
   renderChart(elements.cpiChart, rebasedCpiPoints, {
     keys: ["cpiValue", "selectedValue"],
     classNames: { selectedValue: "selected", cpiValue: "cpi" },
+    primaryLabel: elements.legendSelected.textContent,
+    secondaryLabelMap: { cpiValue: "All groups CPI" },
   });
 
   if (wpiAvailable) {
     renderChart(elements.wpiChart, rebasedWpiPoints, {
       keys: ["wpiValue", "selectedValue"],
       classNames: { selectedValue: "selected", wpiValue: "wpi" },
+      primaryLabel: elements.wpiLegendSelected.textContent,
+      secondaryLabelMap: { wpiValue: "Wage Price Index" },
     });
     elements.wpiLegend.classList.remove("is-hidden");
     elements.wpiChartSubtitle.textContent = "Both lines start from the same point so you can compare the change.";
