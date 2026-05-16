@@ -122,6 +122,8 @@ function populateHorizonSelect() {
 }
 
 function populateDateSelects(sharedPoints) {
+  const previousStart = elements.startSelect.value;
+  const previousEnd = elements.endSelect.value;
   const options = sharedPoints.map((point) => ({
     value: point.date,
     label: formatQuarter(point.date),
@@ -131,8 +133,18 @@ function populateDateSelects(sharedPoints) {
   fillSelect(elements.endSelect, options);
 
   if (options.length) {
-    elements.startSelect.value = options[0].value;
-    elements.endSelect.value = options[options.length - 1].value;
+    const firstDate = options[0].value;
+    const lastDate = options[options.length - 1].value;
+
+    const nextStart = previousStart
+      ? (previousStart < firstDate ? firstDate : previousStart > lastDate ? lastDate : previousStart)
+      : firstDate;
+    const nextEnd = previousEnd
+      ? (previousEnd < firstDate ? firstDate : previousEnd > lastDate ? lastDate : previousEnd)
+      : lastDate;
+
+    elements.startSelect.value = nextStart;
+    elements.endSelect.value = nextEnd < nextStart ? nextStart : nextEnd;
   }
 }
 
