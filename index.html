@@ -219,6 +219,11 @@
       letter-spacing: 0.03em; color: var(--muted);
       text-transform: uppercase;
     }
+    .ctrl-label-inline {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
     .ctrl-group select {
       min-height: 44px; padding: 0 14px;
       border-radius: 10px;
@@ -796,9 +801,9 @@
         <p id="selection-meta" class="field-help">Choose a good or a broader group from the ABS list.</p>
       </div>
       <div class="ctrl-group control-group">
-        <label class="ctrl-label" for="start-date-search">
+        <label class="ctrl-label ctrl-label-inline" for="start-date-search">
           From
-          <button class="info-btn" type="button" id="q-info-start" aria-label="What is a quarter?" style="margin-left:4px">i</button>
+          <button class="info-btn" type="button" id="q-info-start" aria-label="What is a quarter?">i</button>
         </label>
         <select id="start-date-search"></select>
         <div class="quarter-legend" id="q-legend">
