@@ -85,6 +85,14 @@ function formatChangeSinceStart(value) {
   return `${sign}${change.toFixed(1)}%`;
 }
 
+function escapeHtmlAttribute(value) {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
 function setMetricTone(element, value, invert = false) {
   element.classList.remove("metric-positive", "metric-negative", "metric-neutral");
   if (!Number.isFinite(value)) {
@@ -282,10 +290,18 @@ function renderChart(target, filteredPoints, config) {
         const label = key === "selectedValue"
           ? config.primaryLabel
           : (config.secondaryLabelMap?.[key] || key);
-        const title = `${formatQuarter(point.date)}\n${label}: ${formatChangeSinceStart(point[key])} since start date`;
+        const dateLabel = formatQuarter(point.date);
+        const changeLabel = formatChangeSinceStart(point[key]);
+        const title = `${dateLabel}\n${label}: ${changeLabel} since start date`;
         return `
-          <g>
-            <circle class="chart-point-hit" cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="8">
+          <g class="chart-point-group"
+             data-date="${escapeHtmlAttribute(dateLabel)}"
+             data-label="${escapeHtmlAttribute(label)}"
+             data-change="${escapeHtmlAttribute(changeLabel)}"
+             data-color="${escapeHtmlAttribute(config.pointColors?.[key] || "")}"
+             data-x="${x.toFixed(2)}"
+             data-y="${y.toFixed(2)}">
+            <circle class="chart-point-hit" cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="9">
               <title>${title}</title>
             </circle>
             <circle class="chart-point ${config.classNames[key]}" cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="2.75"></circle>
@@ -450,7 +466,11 @@ function updateView() {
     classNames: { selectedValue: "selected", cpiValue: "cpi" },
     primaryLabel: elements.legendSelected.textContent,
     secondaryLabelMap: { cpiValue: "All groups CPI" },
+    pointColors: { selectedValue: "#0b6ea8", cpiValue: "#c9403a" },
   });
+  if (typeof window.applyChartEnhancements === "function") {
+    window.applyChartEnhancements("cpi-chart");
+  }
 
   if (wpiAvailable) {
     renderChart(elements.wpiChart, rebasedWpiPoints, {
@@ -458,7 +478,11 @@ function updateView() {
       classNames: { selectedValue: "selected", wpiValue: "wpi" },
       primaryLabel: elements.wpiLegendSelected.textContent,
       secondaryLabelMap: { wpiValue: "Wage Price Index" },
+      pointColors: { selectedValue: "#0b6ea8", wpiValue: "#7d4bd1" },
     });
+    if (typeof window.applyChartEnhancements === "function") {
+      window.applyChartEnhancements("wpi-chart");
+    }
     elements.wpiLegend.classList.remove("is-hidden");
     elements.wpiChartSubtitle.textContent = "Both lines start from the same point so you can compare the change.";
   } else {

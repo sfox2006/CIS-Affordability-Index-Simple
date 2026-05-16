@@ -1059,14 +1059,321 @@
   <script src="app.js?v=2"></script>
 
   <script>
+  const TWEAK_DEFAULTS = { theme: 'theme-light', chartStyle: 'lines' };
+  let tweaks = Object.assign({}, TWEAK_DEFAULTS);
 
-  // â”€â”€ LOAD STATE FROM HASH â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  function getControl(id) {
+    return document.getElementById(id);
+  }
+
+  function showToast(message) {
+    const toast = getControl('chart-toast');
+    if (!toast) return;
+    toast.textContent = message;
+    toast.classList.add('visible');
+    clearTimeout(showToast._timer);
+    showToast._timer = setTimeout(() => toast.classList.remove('visible'), 1800);
+  }
+
+  function applyTheme(theme) {
+    document.body.classList.remove('theme-light', 'theme-editorial', 'theme-dark');
+    document.body.classList.add(theme);
+  }
+
+  function applyChartStyle(style) {
+    tweaks.chartStyle = style;
+    document.querySelectorAll('.series-area').forEach(el => {
+      el.style.display = style === 'area' ? '' : 'none';
+    });
+  }
+
+  document.querySelectorAll('[data-theme]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      tweaks.theme = btn.dataset.theme;
+      applyTheme(tweaks.theme);
+      document.querySelectorAll('[data-theme]').forEach(other => other.classList.toggle('active', other === btn));
+    });
+  });
+
+  document.querySelectorAll('[data-chart]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      applyChartStyle(btn.dataset.chart);
+      document.querySelectorAll('[data-chart]').forEach(other => other.classList.toggle('active', other === btn));
+    });
+  });
+
+  applyTheme(tweaks.theme);
+
+  function getState() {
+    return {
+      s: getControl('series-search')?.value || '',
+      start: getControl('start-date-search')?.value || '',
+      end: getControl('end-date-search')?.value || '',
+      m: getControl('mode-select')?.value || '',
+      h: getControl('time-horizon-search')?.value || '',
+    };
+  }
+
+  function setState(state) {
+    if (!state) return;
+    if (state.m && getControl('mode-select')) getControl('mode-select').value = state.m;
+    if (state.s && getControl('series-search')) getControl('series-search').value = state.s;
+    if (state.h && getControl('time-horizon-search')) getControl('time-horizon-search').value = state.h;
+    if (state.start && getControl('start-date-search')) getControl('start-date-search').value = state.start;
+    if (state.end && getControl('end-date-search')) getControl('end-date-search').value = state.end;
+  }
+
+  function pushState() {
+    try {
+      history.replaceState(null, '', '#' + btoa(JSON.stringify(getState())));
+    } catch (e) {}
+  }
+
+  function loadFromHash() {
+    const hash = location.hash.slice(1);
+    if (!hash) return null;
+    try {
+      return JSON.parse(atob(hash));
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function resetShareButton() {
+    const btn = getControl('btn-share');
+    if (!btn) return;
+    btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="11" cy="2.5" r="1.5" stroke="currentColor" stroke-width="1.4"/><circle cx="11" cy="11.5" r="1.5" stroke="currentColor" stroke-width="1.4"/><circle cx="3" cy="7" r="1.5" stroke="currentColor" stroke-width="1.4"/><path d="M9.5 3.3 4.5 6.2M9.5 10.7 4.5 7.8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg> Share';
+  }
+
+  function showShareCopied() {
+    const btn = getControl('btn-share');
+    if (!btn) return;
+    btn.textContent = 'Copied';
+    setTimeout(resetShareButton, 1600);
+  }
+
+  resetShareButton();
+
+  getControl('btn-share')?.addEventListener('click', async () => {
+    pushState();
+    try {
+      await navigator.clipboard.writeText(location.href);
+      showShareCopied();
+    } catch (e) {
+      showToast('Share link ready in the address bar.');
+      showShareCopied();
+    }
+  });
+
+  getControl('btn-print')?.addEventListener('click', () => window.print());
+
+  ['series-search', 'start-date-search', 'end-date-search', 'mode-select', 'time-horizon-search'].forEach(id => {
+    getControl(id)?.addEventListener('change', pushState);
+  });
+
+  const heroObserver = new MutationObserver(() => {
+    const heroStat = getControl('hero-stat');
+    const sourceStat = getControl('gap-wpi-change');
+    if (!heroStat || !sourceStat) return;
+    heroStat.textContent = sourceStat.textContent;
+    heroStat.classList.remove('metric-positive', 'metric-negative', 'metric-neutral');
+    ['metric-positive', 'metric-negative', 'metric-neutral'].forEach(cls => {
+      if (sourceStat.classList.contains(cls)) heroStat.classList.add(cls);
+    });
+    const range = getControl('selected-range')?.textContent || '';
+    const verdict = getControl('gap-wpi-range')?.textContent || '';
+    const label = getControl('hero-stat-label');
+    const note = getControl('hero-simple-note');
+    if (label) label.textContent = range;
+    if (note) note.textContent = verdict;
+  });
+
+  const gapStat = getControl('gap-wpi-change');
+  if (gapStat) {
+    heroObserver.observe(gapStat, { childList: true, characterData: true, subtree: true, attributes: true });
+  }
+
+  const qInfoBtn = getControl('q-info-start');
+  const qLegend = getControl('q-legend');
+  if (qInfoBtn && qLegend) {
+    qInfoBtn.addEventListener('click', event => {
+      event.stopPropagation();
+      qLegend.classList.toggle('open');
+    });
+    document.addEventListener('click', () => qLegend.classList.remove('open'));
+  }
+
+  function addAreaFills(svgEl) {
+    if (!svgEl) return;
+    svgEl.querySelectorAll('.series-area').forEach(el => el.remove());
+    const lines = svgEl.querySelectorAll('.series-line');
+    if (!lines.length) return;
+    const bottom = 420 - 48;
+    lines.forEach(line => {
+      const d = line.getAttribute('d');
+      if (!d) return;
+      const coords = d.match(/[-+]?[0-9]*\.?[0-9]+/g);
+      if (!coords || coords.length < 4) return;
+      const firstX = parseFloat(coords[0]);
+      const lastX = parseFloat(coords[coords.length - 2]);
+      const area = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      const cls = line.classList.contains('selected') ? 'selected' : line.classList.contains('cpi') ? 'cpi' : 'wpi';
+      area.setAttribute('class', 'series-area ' + cls);
+      area.setAttribute('d', d + ' L' + lastX + ' ' + bottom + ' L' + firstX + ' ' + bottom + ' Z');
+      svgEl.insertBefore(area, svgEl.firstChild);
+    });
+    applyChartStyle(tweaks.chartStyle);
+  }
+
+  function ensureCrosshair(svgEl) {
+    let crosshair = svgEl.querySelector('.crosshair');
+    if (!crosshair) {
+      crosshair = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      crosshair.setAttribute('class', 'crosshair');
+      crosshair.style.display = 'none';
+      svgEl.appendChild(crosshair);
+    }
+    return crosshair;
+  }
+
+  function showPointTooltip(frame, tooltip, group) {
+    if (!frame || !tooltip || !group) return;
+    const date = group.dataset.date || '';
+    const label = group.dataset.label || '';
+    const change = group.dataset.change || '--';
+    const color = group.dataset.color || '#0b6ea8';
+    const x = Number(group.dataset.x || 0);
+    const y = Number(group.dataset.y || 0);
+
+    tooltip.innerHTML = `
+      <div class="tooltip-date">${date}</div>
+      <div class="tooltip-row">
+        <span class="tooltip-dot" style="background:${color}"></span>
+        <span>${label}</span>
+        <span class="tooltip-val">${change}</span>
+      </div>
+      <div class="tooltip-note">Change since your selected start date.</div>
+    `;
+
+    const frameWidth = frame.clientWidth;
+    const scaleX = frameWidth / 920;
+    const leftPx = x * scaleX;
+    const tooltipWidth = 220;
+    let tooltipLeft = leftPx + 16;
+    if (tooltipLeft + tooltipWidth > frameWidth - 10) {
+      tooltipLeft = leftPx - tooltipWidth - 16;
+    }
+    if (tooltipLeft < 10) tooltipLeft = 10;
+
+    tooltip.style.left = tooltipLeft + 'px';
+    tooltip.style.top = Math.max(10, (y / 420) * frame.clientHeight - 48) + 'px';
+    tooltip.classList.add('visible');
+  }
+
+  function hidePointTooltip(svgEl, tooltip) {
+    tooltip?.classList.remove('visible');
+    svgEl?.querySelectorAll('.chart-point-group.is-active').forEach(group => group.classList.remove('is-active'));
+    const crosshair = svgEl?.querySelector('.crosshair');
+    if (crosshair) crosshair.style.display = 'none';
+  }
+
+  function wireChartHover(svgId, tooltipId) {
+    const svg = getControl(svgId);
+    const tooltip = getControl(tooltipId);
+    const frame = svg?.closest('.chart-frame');
+    if (!svg || !tooltip || !frame || svg.dataset.hoverWired === 'true') return;
+    svg.dataset.hoverWired = 'true';
+
+    svg.addEventListener('mousemove', event => {
+      const group = event.target.closest('.chart-point-group');
+      if (!group) {
+        hidePointTooltip(svg, tooltip);
+        return;
+      }
+
+      svg.querySelectorAll('.chart-point-group.is-active').forEach(item => {
+        if (item !== group) item.classList.remove('is-active');
+      });
+      group.classList.add('is-active');
+
+      const crosshair = ensureCrosshair(svg);
+      const x = Number(group.dataset.x || 0);
+      crosshair.setAttribute('x1', x);
+      crosshair.setAttribute('x2', x);
+      crosshair.setAttribute('y1', 24);
+      crosshair.setAttribute('y2', 372);
+      crosshair.style.display = '';
+
+      showPointTooltip(frame, tooltip, group);
+    });
+
+    svg.addEventListener('mouseleave', () => hidePointTooltip(svg, tooltip));
+  }
+
+  window.applyChartEnhancements = function(svgId) {
+    const svg = getControl(svgId);
+    if (!svg) return;
+    addAreaFills(svg);
+    applyChartStyle(tweaks.chartStyle);
+  };
+
+  function downloadChartPng(svgId, filename) {
+    const svg = getControl(svgId);
+    if (!svg || !svg.innerHTML.trim()) {
+      showToast('No chart is ready to download yet.');
+      return;
+    }
+
+    const clone = svg.cloneNode(true);
+    clone.querySelectorAll('.crosshair').forEach(el => el.remove());
+    const serialized = new XMLSerializer().serializeToString(clone);
+    const source = '<?xml version="1.0" standalone="no"?>\n' +
+      serialized.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg" style="background:#f7faf8;font-family:Manrope,sans-serif"');
+    const blob = new Blob([source], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const img = new Image();
+
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 1840;
+      canvas.height = 840;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#f7faf8';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      URL.revokeObjectURL(url);
+      const link = document.createElement('a');
+      link.href = canvas.toDataURL('image/png');
+      link.download = filename + '.png';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      showToast('PNG download started.');
+    };
+
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      showToast('The chart could not be downloaded just yet.');
+    };
+
+    img.src = url;
+  }
+
+  getControl('dl-btn-cpi')?.addEventListener('click', () => downloadChartPng('cpi-chart', 'cis-price-vs-cpi'));
+  getControl('dl-btn-wpi')?.addEventListener('click', () => downloadChartPng('wpi-chart', 'cis-price-vs-wages'));
+
+  wireChartHover('cpi-chart', 'cpi-tooltip');
+  wireChartHover('wpi-chart', 'wpi-tooltip');
+
   window.addEventListener('load', () => {
     const saved = loadFromHash();
     if (saved) {
       setTimeout(() => {
-        try { setState(saved); document.getElementById('series-search').dispatchEvent(new Event('change')); } catch(e) {}
-      }, 800);
+        try {
+          setState(saved);
+          getControl('series-search')?.dispatchEvent(new Event('change'));
+        } catch (e) {}
+      }, 300);
     }
   });
 
