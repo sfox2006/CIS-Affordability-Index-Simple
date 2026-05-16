@@ -543,6 +543,12 @@
     .tooltip-gap-label {
       color: var(--muted);
     }
+    .tooltip-verdict {
+      margin-top: 8px;
+      font-size: 0.74rem;
+      color: var(--muted);
+      line-height: 1.4;
+    }
     .chart-point {
       stroke-width: 0;
       pointer-events: all;
@@ -1203,6 +1209,7 @@
     return {
       dataKey: 'wpi',
       gap: { label: 'Price minus wage growth', leftKey: 'selectedValue', rightKey: 'wpiValue' },
+      verdict: true,
       rows: [
         { key: 'selectedValue', labelId: 'wpi-legend-selected', fallbackLabel: 'Selected good', color: '#0b6ea8' },
         { key: 'wpiValue', label: 'Wage Price Index', color: '#7d4bd1' }
@@ -1234,6 +1241,21 @@
     const gapValue = point
       ? formatHoverChange(point[hoverConfig.gap.leftKey] - point[hoverConfig.gap.rightKey] + 100)
       : '--';
+    let verdictHtml = '';
+    if (hoverConfig.verdict) {
+      const gapNumber = point ? point[hoverConfig.gap.leftKey] - point[hoverConfig.gap.rightKey] : null;
+      let verdictText = 'No affordability reading is available.';
+      if (Number.isFinite(gapNumber)) {
+        if (gapNumber < 0) {
+          verdictText = 'This item was more affordable at this point.';
+        } else if (gapNumber > 0) {
+          verdictText = 'This item was less affordable at this point.';
+        } else {
+          verdictText = 'There was no change in affordability at this point.';
+        }
+      }
+      verdictHtml = `<div class="tooltip-verdict">${verdictText}</div>`;
+    }
 
     tooltip.innerHTML = `
       <div class="tooltip-date">${date}</div>
@@ -1242,6 +1264,7 @@
         <span class="tooltip-gap-label">${hoverConfig.gap.label}</span>
         <span class="tooltip-val">${gapValue}</span>
       </div>
+      ${verdictHtml}
       <div class="tooltip-note">Change since your selected start date.</div>
     `;
 
