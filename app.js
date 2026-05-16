@@ -295,10 +295,12 @@ function renderChart(target, filteredPoints, config) {
         const title = `${dateLabel}\n${label}: ${changeLabel} since start date`;
         return `
           <g class="chart-point-group"
+             data-raw-date="${escapeHtmlAttribute(point.date)}"
              data-date="${escapeHtmlAttribute(dateLabel)}"
              data-label="${escapeHtmlAttribute(label)}"
              data-change="${escapeHtmlAttribute(changeLabel)}"
              data-color="${escapeHtmlAttribute(config.pointColors?.[key] || "")}"
+             data-series-key="${escapeHtmlAttribute(key)}"
              data-x="${x.toFixed(2)}"
              data-y="${y.toFixed(2)}">
             <circle class="chart-point-hit" cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="9">

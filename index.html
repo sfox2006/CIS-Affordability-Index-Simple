@@ -1236,22 +1236,57 @@
     return crosshair;
   }
 
-  function showPointTooltip(frame, tooltip, group) {
+  function formatHoverChange(value) {
+    if (!Number.isFinite(value)) return '--';
+    const change = value - 100;
+    const sign = change > 0 ? '+' : '';
+    return sign + change.toFixed(1) + '%';
+  }
+
+  function getHoverConfig(svgId) {
+    if (svgId === 'cpi-chart') {
+      return {
+        dataKey: 'cpi',
+        rows: [
+          { key: 'selectedValue', labelId: 'legend-selected', fallbackLabel: 'Selected good', color: '#0b6ea8' },
+          { key: 'cpiValue', label: 'All groups CPI', color: '#c9403a' }
+        ]
+      };
+    }
+    return {
+      dataKey: 'wpi',
+      rows: [
+        { key: 'selectedValue', labelId: 'wpi-legend-selected', fallbackLabel: 'Selected good', color: '#0b6ea8' },
+        { key: 'wpiValue', label: 'Wage Price Index', color: '#7d4bd1' }
+      ]
+    };
+  }
+
+  function showPointTooltip(frame, tooltip, group, svgId) {
     if (!frame || !tooltip || !group) return;
+    const hoverConfig = getHoverConfig(svgId);
     const date = group.dataset.date || '';
-    const label = group.dataset.label || '';
-    const change = group.dataset.change || '--';
-    const color = group.dataset.color || '#0b6ea8';
+    const rawDate = group.dataset.rawDate || '';
     const x = Number(group.dataset.x || 0);
     const y = Number(group.dataset.y || 0);
+    const chartData = window._chartData?.[hoverConfig.dataKey] || [];
+    const point = chartData.find(item => item.date === rawDate) || null;
+
+    const rowsHtml = hoverConfig.rows.map(row => {
+      const label = row.label || getControl(row.labelId)?.textContent || row.fallbackLabel || row.key;
+      const change = point ? formatHoverChange(point[row.key]) : '--';
+      return `
+        <div class="tooltip-row">
+          <span class="tooltip-dot" style="background:${row.color}"></span>
+          <span>${label}</span>
+          <span class="tooltip-val">${change}</span>
+        </div>
+      `;
+    }).join('');
 
     tooltip.innerHTML = `
       <div class="tooltip-date">${date}</div>
-      <div class="tooltip-row">
-        <span class="tooltip-dot" style="background:${color}"></span>
-        <span>${label}</span>
-        <span class="tooltip-val">${change}</span>
-      </div>
+      ${rowsHtml}
       <div class="tooltip-note">Change since your selected start date.</div>
     `;
 
@@ -1304,7 +1339,7 @@
       crosshair.setAttribute('y2', 372);
       crosshair.style.display = '';
 
-      showPointTooltip(frame, tooltip, group);
+      showPointTooltip(frame, tooltip, group, svgId);
     });
 
     svg.addEventListener('mouseleave', () => hidePointTooltip(svg, tooltip));
