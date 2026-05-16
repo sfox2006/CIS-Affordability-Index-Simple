@@ -600,6 +600,28 @@
     }
     .anno-save { background: var(--cg); color: white; border-color: var(--cg); }
     .anno-cancel { background: transparent; color: var(--muted); }
+    .chart-toast {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      z-index: 1000;
+      background: var(--cg-xdark);
+      color: white;
+      border-radius: 12px;
+      padding: 12px 14px;
+      box-shadow: var(--sh-lg);
+      font-size: 0.82rem;
+      line-height: 1.45;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 0.18s ease, transform 0.18s ease;
+      max-width: 280px;
+      pointer-events: none;
+    }
+    .chart-toast.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
 
     /* Crosshair */
     .crosshair { stroke: rgba(22,54,47,0.18); stroke-width: 1; stroke-dasharray: 3 3; pointer-events: none; }
@@ -1013,6 +1035,8 @@
 
   </main>
 
+  <div class="chart-toast" id="chart-toast"></div>
+
   <!-- TWEAKS PANEL -->
   <div class="tweaks-panel" id="tweaks-panel">
     <div class="tweaks-title">Tweaks</div>
@@ -1191,6 +1215,17 @@
     const sign = pct > 0 ? '+' : '';
     return `${sign}${pct.toFixed(1)}%`;
   }
+  const toastEl = document.getElementById('chart-toast');
+  let toastTimer = null;
+  function showChartToast(message) {
+    if (!toastEl) return;
+    toastEl.textContent = message;
+    toastEl.classList.add('visible');
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => {
+      toastEl.classList.remove('visible');
+    }, 2200);
+  }
 
   // Store rebased point data for tooltips
   window._chartData = window._chartData || { cpi: [], wpi: [] };
@@ -1337,7 +1372,7 @@
   // â”€â”€ CHART DOWNLOAD PNG â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   function downloadChartPng(svgId, filename) {
     const svg = document.getElementById(svgId);
-    if (!svg || !svg.innerHTML.trim()) { alert('No chart to download yet.'); return; }
+    if (!svg || !svg.innerHTML.trim()) { showChartToast('No chart is ready to download yet.'); return; }
     const serializer = new XMLSerializer();
     const source = '<?xml version="1.0" standalone="no"?>\n' +
       serializer.serializeToString(svg).replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg" style="background:#f7faf8;font-family:sans-serif"');
@@ -1359,6 +1394,7 @@
       a.download = filename + '.png';
       a.href = c.toDataURL('image/png');
       a.click();
+      showChartToast('PNG download started.');
     };
     img.src = url;
   }
@@ -1381,12 +1417,14 @@
       annoMode = null;
       document.getElementById('anno-btn-' + chartKey).classList.remove('active');
       frame.style.cursor = '';
+      showChartToast('Annotation mode turned off.');
       return;
     }
     annoMode = chartKey;
     document.querySelectorAll('.chart-action-btn[id^=anno-btn]').forEach(b => b.classList.remove('active'));
     document.getElementById('anno-btn-' + chartKey).classList.add('active');
     frame.style.cursor = 'crosshair';
+    showChartToast('Click anywhere on the chart to place a note.');
 
     function onFrameClick(e) {
       if (!annoMode) return;
