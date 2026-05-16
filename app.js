@@ -252,6 +252,20 @@ function renderChart(target, filteredPoints, config) {
     className: config.classNames[key],
     d: linePath(filteredPoints, width, height, margin, key, minValue, maxValue),
   }));
+  const range = maxValue - minValue || 1;
+  const xStep = filteredPoints.length > 1 ? plotWidth / (filteredPoints.length - 1) : 0;
+  const pointMarkup = config.keys.map((key) => (
+    filteredPoints
+      .map((point, index) => {
+        if (!Number.isFinite(point[key])) {
+          return "";
+        }
+        const x = margin.left + xStep * index;
+        const y = margin.top + plotHeight - ((point[key] - minValue) / range) * plotHeight;
+        return `<circle class="chart-point ${config.classNames[key]}" cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="4.5"></circle>`;
+      })
+      .join("")
+  )).join("");
 
   const gridLines = Array.from({ length: yTicks }, (_, index) => {
     const ratio = index / (yTicks - 1);
@@ -276,6 +290,7 @@ function renderChart(target, filteredPoints, config) {
     <line class="axis-line" x1="${margin.left}" y1="${margin.top}" x2="${margin.left}" y2="${height - margin.bottom}"></line>
     ${gridLines}
     ${paths.map((path) => `<path class="series-line ${path.className}" d="${path.d}"></path>`).join("")}
+    ${pointMarkup}
     ${xTicks}
   `;
 }
@@ -399,6 +414,8 @@ function updateView() {
   const rebasedWpiPoints = wpiAvailable ? rebasePoints(filteredPoints, ["selectedValue", "wpiValue"]) : [];
 
   elements.emptyState.textContent = "";
+  window._chartData.cpi = rebasedCpiPoints;
+  window._chartData.wpi = rebasedWpiPoints;
   updateStatCards(filteredPoints);
   renderChart(elements.cpiChart, rebasedCpiPoints, {
     keys: ["cpiValue", "selectedValue"],
