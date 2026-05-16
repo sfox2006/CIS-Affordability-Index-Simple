@@ -699,7 +699,9 @@ async function init() {
   populateSeriesSelect();
   populateHorizonSelect();
 
-  elements.sourceText.textContent = `${elements.seriesSelect.options.length} ABS goods and goods groups available.`;
+  if (elements.sourceText) {
+    elements.sourceText.textContent = `${elements.seriesSelect.options.length} ABS goods and goods groups available.`;
+  }
   elements.horizonSelect.value = "custom";
 
   const initialSeries =
