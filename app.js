@@ -264,7 +264,7 @@ function renderChart(target, filteredPoints, config) {
         }
         const x = margin.left + xStep * index;
         const y = margin.top + plotHeight - ((point[key] - minValue) / range) * plotHeight;
-        return `<circle class="chart-point ${config.classNames[key]}" cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="4.5"></circle>`;
+        return `<circle class="chart-point ${config.classNames[key]}" cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="2.75"></circle>`;
       })
       .join("")
   )).join("");
