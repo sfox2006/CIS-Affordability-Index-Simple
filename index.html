@@ -206,10 +206,11 @@
       border-radius: var(--r-lg);
       padding: 24px 28px;
       display: grid;
-      grid-template-columns: 2.2fr repeat(3, minmax(0,1fr)) minmax(0,1fr);
+      grid-template-columns: minmax(0, 1.4fr) minmax(0, 1.35fr) repeat(3, minmax(0, 0.65fr));
       gap: 18px;
       margin-bottom: 24px;
       transition: background 0.35s;
+      align-items: start;
     }
 
     .ctrl-group { display: flex; flex-direction: column; gap: 7px; }
@@ -222,16 +223,19 @@
       position: relative;
     }
     .brand-select-wrap select {
-      padding-left: 52px;
+      padding-left: 60px;
     }
     .brand-select-logo {
       position: absolute;
-      left: 14px;
+      left: 16px;
       top: 50%;
       transform: translateY(-50%);
-      width: 26px;
-      height: 26px;
+      width: 22px;
+      height: 22px;
       pointer-events: none;
+    }
+    .control-group-wide {
+      grid-column: span 2;
     }
     .ctrl-group select {
       min-height: 44px; padding: 0 14px;
@@ -715,6 +719,7 @@
     @media (max-width: 860px) {
       .hero-inner { grid-template-columns: 1fr !important; }
       .controls-card { grid-template-columns: 1fr 1fr; }
+      .control-group-wide { grid-column: span 1; }
       .stats-grid { grid-template-columns: repeat(2, 1fr); }
     }
     @media (max-width: 640px) {
@@ -797,7 +802,7 @@
           <option value="basket">Custom basket</option>
         </select>
       </div>
-      <div class="ctrl-group control-group" id="series-group" style="grid-column: span 1;">
+      <div class="ctrl-group control-group control-group-wide" id="series-group">
         <label class="ctrl-label" for="series-search">What do you want to check?</label>
         <div class="brand-select-wrap">
           <svg class="brand-select-logo" viewBox="0 0 40 40" aria-hidden="true">
