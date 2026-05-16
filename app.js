@@ -174,20 +174,16 @@ function updateStatCards(filteredPoints) {
   elements.gapWpiChange.textContent = wpiAvailable ? formatPercent(gapWpi) : "No data";
   elements.selectedRange.textContent = rangeLabel;
   elements.cpiRange.textContent = rangeLabel;
-  elements.wpiRange.textContent = wpiAvailable ? rangeLabel : "No data available before Dec 2010.";
-  elements.gapCpiRange.textContent = "Selected good minus CPI over the chosen window.";
+  elements.wpiRange.textContent = wpiAvailable ? rangeLabel : "No wage comparison is available before Dec 2010.";
+  elements.gapCpiRange.textContent = "Price change minus overall inflation.";
   elements.gapWpiRange.textContent = wpiAvailable
-    ? "Selected good minus WPI over the chosen window."
-    : "WPI is unavailable because the chosen range starts before Dec 2010.";
+    ? "Price change minus wage growth."
+    : "Wage comparisons are only available from Dec 2010 onward.";
 
-  setMetricTone(elements.selectedChange, selectedChange, true);
-  setMetricTone(elements.cpiChange, cpiChange, true);
-  if (wpiAvailable) {
-    setMetricTone(elements.wpiChange, wpiChange, true);
-  } else {
-    elements.wpiChange.classList.remove("metric-positive", "metric-negative", "metric-neutral");
-    elements.wpiChange.classList.add("metric-neutral");
-  }
+  [elements.selectedChange, elements.cpiChange, elements.wpiChange].forEach((element) => {
+    element.classList.remove("metric-positive", "metric-negative");
+    element.classList.add("metric-neutral");
+  });
   setMetricTone(elements.gapCpiChange, gapCpi, true);
   if (wpiAvailable) {
     setMetricTone(elements.gapWpiChange, gapWpi, true);
@@ -274,9 +270,9 @@ function renderChart(target, filteredPoints, config) {
 
 function resetEmptyState(message) {
   elements.cpiChartTitle.textContent = "Waiting for a selection";
-  elements.cpiChartSubtitle.textContent = "Both series are rebased to 100 at the selected start date.";
+  elements.cpiChartSubtitle.textContent = "Both lines start from the same point on your chosen start date.";
   elements.wpiChartTitle.textContent = "Waiting for a selection";
-  elements.wpiChartSubtitle.textContent = "Both series are rebased to 100 at the selected start date. Wage data from Q4 2010 only.";
+  elements.wpiChartSubtitle.textContent = "Both lines start from the same point on your chosen start date.";
   elements.cpiChart.innerHTML = "";
   elements.wpiChart.innerHTML = "";
   elements.emptyState.textContent = message;
@@ -285,9 +281,11 @@ function resetEmptyState(message) {
   elements.wpiChange.textContent = "--";
   elements.gapCpiChange.textContent = "--";
   elements.gapWpiChange.textContent = "--";
+  elements.selectedRange.textContent = "Choose a good to begin.";
+  elements.cpiRange.textContent = "Matched to the same period.";
   elements.wpiRange.textContent = "Available from Dec 2010 onward.";
-  elements.gapCpiRange.textContent = "Selected good minus CPI over the chosen window.";
-  elements.gapWpiRange.textContent = "Selected good minus WPI over the chosen window.";
+  elements.gapCpiRange.textContent = "Price change minus overall inflation.";
+  elements.gapWpiRange.textContent = "Price change minus wage growth.";
   elements.wpiLegend.classList.add("is-hidden");
   [
     elements.selectedChange,
@@ -401,11 +399,11 @@ function updateView() {
       classNames: { selectedValue: "selected", wpiValue: "wpi" },
     });
     elements.wpiLegend.classList.remove("is-hidden");
-    elements.wpiChartSubtitle.textContent = "Both series are rebased to 100 at the selected start date. Wage data from Q4 2010 only.";
+    elements.wpiChartSubtitle.textContent = "Both lines start from the same point so you can compare the change.";
   } else {
     elements.wpiChart.innerHTML = "";
     elements.wpiLegend.classList.add("is-hidden");
-    elements.wpiChartSubtitle.textContent = "No WPI data: wage data is only available from Q4 2010 (Dec 2010) onward. Please adjust your start date.";
+    elements.wpiChartSubtitle.textContent = "No wage comparison is available because your chosen period starts before Dec 2010.";
   }
 }
 
@@ -518,18 +516,18 @@ function updateSingleSeriesView() {
   const series = state.dataset.series.find((item) => item.seriesId === elements.seriesSelect.value);
   state.selectedSeries = series;
   state.sharedPoints = getSharedRangePoints(series);
-  elements.selectionMeta.textContent = `${series.description} Available from ${formatQuarter(series.start)} to ${formatQuarter(series.end)}.`;
-  elements.primaryStatLabel.textContent = "Selected good change";
+  elements.selectionMeta.textContent = `${series.label} data is available from ${formatQuarter(series.start)} to ${formatQuarter(series.end)}.`;
+  elements.primaryStatLabel.textContent = "Price change";
   elements.legendSelected.textContent = series.label;
   elements.wpiLegendSelected.textContent = series.label;
   populateDateSelects(state.sharedPoints);
   if (elements.horizonSelect.value !== "custom") {
     applyQuickRange();
   }
-  elements.cpiChartTitle.textContent = `${series.label} vs CPI`;
-  elements.cpiChartSubtitle.textContent = `${series.seriesId} and All groups CPI, both rebased to 100 at the selected start date.`;
-  elements.wpiChartTitle.textContent = `${series.label} vs WPI`;
-  elements.wpiChartSubtitle.textContent = `${series.seriesId} and All sector WPI, both rebased to 100 at the selected start date. Wage data from Q4 2010 only.`;
+  elements.cpiChartTitle.textContent = `${series.label} compared with overall inflation`;
+  elements.cpiChartSubtitle.textContent = "Both lines start from the same point so you can compare the change.";
+  elements.wpiChartTitle.textContent = `${series.label} compared with wages`;
+  elements.wpiChartSubtitle.textContent = "Both lines start from the same point so you can compare the change.";
   updateView();
 }
 
@@ -537,7 +535,7 @@ function updateBasketView() {
   renderBasketRows();
   const basket = buildBasketSeries();
   state.sharedPoints = basket.points;
-  elements.primaryStatLabel.textContent = "Custom basket change";
+  elements.primaryStatLabel.textContent = "Basket price change";
   elements.legendSelected.textContent = basket.label;
   elements.wpiLegendSelected.textContent = basket.label;
   elements.selectionMeta.textContent = basket.description;
@@ -551,10 +549,10 @@ function updateBasketView() {
   if (elements.horizonSelect.value !== "custom") {
     applyQuickRange();
   }
-  elements.cpiChartTitle.textContent = `${basket.label} vs CPI`;
-  elements.cpiChartSubtitle.textContent = "Custom basket and All groups CPI, both rebased to 100 at the selected start date.";
-  elements.wpiChartTitle.textContent = `${basket.label} vs WPI`;
-  elements.wpiChartSubtitle.textContent = "Custom basket and All sector WPI, both rebased to 100 at the selected start date. Wage data from Q4 2010 only.";
+  elements.cpiChartTitle.textContent = `${basket.label} compared with overall inflation`;
+  elements.cpiChartSubtitle.textContent = "Both lines start from the same point so you can compare the change.";
+  elements.wpiChartTitle.textContent = `${basket.label} compared with wages`;
+  elements.wpiChartSubtitle.textContent = "Both lines start from the same point so you can compare the change.";
   updateView();
 }
 
@@ -583,7 +581,7 @@ async function init() {
   populateSeriesSelect();
   populateHorizonSelect();
 
-  elements.sourceText.textContent = `${dataset.source}. ${elements.seriesSelect.options.length} goods and goods-group series available.`;
+  elements.sourceText.textContent = `${elements.seriesSelect.options.length} ABS goods and goods groups available.`;
   elements.horizonSelect.value = "custom";
 
   const initialSeries =
