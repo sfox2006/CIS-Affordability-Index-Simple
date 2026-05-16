@@ -267,6 +267,8 @@
       color: var(--muted);
       line-height: 1.4;
       white-space: nowrap;
+      grid-column: 1 / -1;
+      margin-top: -8px;
     }
 
     /* â”€â”€ BASKET â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
@@ -804,7 +806,6 @@
       <div class="ctrl-group control-group" id="series-group">
         <label class="ctrl-label" for="series-search">What do you want to check?</label>
         <select id="series-search"></select>
-        <p id="selection-meta" class="field-help">Choose a good or a broader group from the ABS list.</p>
       </div>
       <div class="ctrl-group control-group">
         <label class="ctrl-label ctrl-label-inline" for="start-date-search">
@@ -829,6 +830,7 @@
         <label class="ctrl-label" for="time-horizon-search">Quick pick</label>
         <select id="time-horizon-search"></select>
       </div>
+      <p id="selection-meta" class="field-help">Choose a good or a broader group from the ABS list.</p>
     </section>
 
     <!-- BASKET -->
