@@ -85,6 +85,27 @@ function formatChangeSinceStart(value) {
   return `${sign}${change.toFixed(1)}%`;
 }
 
+function formatAxisChange(value) {
+  if (!Number.isFinite(value)) {
+    return "--";
+  }
+  const change = value - 100;
+  const sign = change > 0 ? "+" : "";
+  return `${sign}${change.toFixed(0)}%`;
+}
+
+function getWageAvailabilityRange(startDate, endDate) {
+  const wageStart = startDate > WPI_START_DATE ? startDate : WPI_START_DATE;
+  const wageEnd = endDate < WPI_DATA[WPI_DATA.length - 1].date ? endDate : WPI_DATA[WPI_DATA.length - 1].date;
+  if (wageStart > wageEnd) {
+    return null;
+  }
+  return {
+    start: wageStart,
+    end: wageEnd,
+  };
+}
+
 function escapeHtmlAttribute(value) {
   return String(value)
     .replace(/&/g, "&amp;")
@@ -319,7 +340,7 @@ function renderChart(target, filteredPoints, config) {
     const tickValue = maxValue - (maxValue - minValue) * ratio;
     return `
       <line class="grid-line" x1="${margin.left}" y1="${y}" x2="${width - margin.right}" y2="${y}"></line>
-      <text class="axis-label" x="${margin.left - 10}" y="${y + 4}" text-anchor="end">${tickValue.toFixed(1)}</text>
+      <text class="axis-label" x="${margin.left - 10}" y="${y + 4}" text-anchor="end">${formatAxisChange(tickValue)}</text>
     `;
   }).join("");
 
@@ -603,7 +624,10 @@ function updateSingleSeriesView() {
   const series = state.dataset.series.find((item) => item.seriesId === elements.seriesSelect.value);
   state.selectedSeries = series;
   state.sharedPoints = getSharedRangePoints(series);
-  elements.selectionMeta.textContent = `${series.label} data is available from ${formatQuarter(series.start)} to ${formatQuarter(series.end)}.`;
+  const wageRange = getWageAvailabilityRange(series.start, series.end);
+  elements.selectionMeta.textContent = wageRange
+    ? `Price data: ${formatQuarter(series.start)} to ${formatQuarter(series.end)}. Wage comparison: ${formatQuarter(wageRange.start)} to ${formatQuarter(wageRange.end)}.`
+    : `Price data: ${formatQuarter(series.start)} to ${formatQuarter(series.end)}. Wage comparison: not available for this item.`;
   elements.primaryStatLabel.textContent = "Price change";
   elements.legendSelected.textContent = series.label;
   elements.wpiLegendSelected.textContent = series.label;
@@ -625,12 +649,19 @@ function updateBasketView() {
   elements.primaryStatLabel.textContent = "Basket price change";
   elements.legendSelected.textContent = basket.label;
   elements.wpiLegendSelected.textContent = basket.label;
-  elements.selectionMeta.textContent = basket.description;
 
   if (!basket.points.length) {
+    elements.selectionMeta.textContent = basket.description;
     resetEmptyState("Add at least two goods with positive weights to build a basket.");
     return;
   }
+
+  const basketStart = basket.points[0].date;
+  const basketEnd = basket.points[basket.points.length - 1].date;
+  const wageRange = getWageAvailabilityRange(basketStart, basketEnd);
+  elements.selectionMeta.textContent = wageRange
+    ? `${basket.description} Price data: ${formatQuarter(basketStart)} to ${formatQuarter(basketEnd)}. Wage comparison: ${formatQuarter(wageRange.start)} to ${formatQuarter(wageRange.end)}.`
+    : `${basket.description} Price data: ${formatQuarter(basketStart)} to ${formatQuarter(basketEnd)}. Wage comparison: not available for this basket.`;
 
   populateDateSelects(state.sharedPoints);
   if (elements.horizonSelect.value !== "custom") {
