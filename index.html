@@ -627,26 +627,6 @@
       opacity: 1;
       transform: translateY(0);
     }
-    .chart-notes {
-      margin-top: 14px;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-    .chart-note {
-      background: var(--surface2);
-      border: 1px solid var(--line);
-      border-radius: 999px;
-      padding: 8px 12px;
-      font-size: 0.78rem;
-      color: var(--ink);
-      line-height: 1.35;
-    }
-    .chart-note strong {
-      color: var(--cg);
-      margin-right: 6px;
-    }
-
     /* Crosshair */
     .crosshair { stroke: rgba(22,54,47,0.18); stroke-width: 1; stroke-dasharray: 3 3; pointer-events: none; }
 
@@ -979,9 +959,6 @@
 
       <article class="chart-card supporting-detail">
         <div class="chart-actions">
-          <button class="chart-action-btn" id="anno-btn-cpi" title="Add annotation">
-            <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 1v11M1 6.5h11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-          </button>
           <button class="chart-action-btn" id="dl-btn-cpi" title="Download PNG">
             <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 1v7M4 6l2.5 2.5L9 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M1 10h11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
           </button>
@@ -1005,14 +982,10 @@
           <svg id="cpi-chart" viewBox="0 0 920 420" role="img" aria-label="Line chart: selected good vs CPI"></svg>
           <div class="chart-tooltip" id="cpi-tooltip"></div>
         </div>
-        <div class="chart-notes" id="cpi-chart-notes"></div>
       </article>
 
       <article class="chart-card">
         <div class="chart-actions">
-          <button class="chart-action-btn" id="anno-btn-wpi" title="Add annotation">
-            <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 1v11M1 6.5h11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-          </button>
           <button class="chart-action-btn" id="dl-btn-wpi" title="Download PNG">
             <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 1v7M4 6l2.5 2.5L9 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M1 10h11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
           </button>
@@ -1036,7 +1009,6 @@
           <svg id="wpi-chart" viewBox="0 0 920 420" role="img" aria-label="Line chart: selected good vs WPI"></svg>
           <div class="chart-tooltip" id="wpi-tooltip"></div>
         </div>
-        <div class="chart-notes" id="wpi-chart-notes"></div>
         <p id="empty-state" class="empty-state">Pick a good or group to compare its price with wages.</p>
       </article>
 
@@ -1087,388 +1059,6 @@
   <script src="app.js?v=2"></script>
 
   <script>
-  // â”€â”€ EXTRAS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
-  const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
-    "theme": "theme-light",
-    "chartStyle": "lines"
-  }/*EDITMODE-END*/;
-  let tweaks = Object.assign({}, TWEAK_DEFAULTS);
-
-  // â”€â”€ TWEAKS PANEL â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  window.addEventListener('message', e => {
-    if (e.data && e.data.type === '__activate_edit_mode') document.getElementById('tweaks-panel').classList.add('open');
-    if (e.data && e.data.type === '__deactivate_edit_mode') document.getElementById('tweaks-panel').classList.remove('open');
-  });
-  try { window.parent.postMessage({ type: '__edit_mode_available' }, '*'); } catch(e) {}
-
-  // Suppress stray unhandled rejections that may come from iframe security constraints
-  window.addEventListener('unhandledrejection', e => { if (!e.reason || (typeof e.reason === 'object' && Object.keys(e.reason).length === 0)) e.preventDefault(); });
-
-  function applyTheme(theme) {
-    document.body.classList.remove('theme-light', 'theme-editorial', 'theme-dark');
-    document.body.classList.add(theme);
-  }
-  function applyChartStyle(style) {
-    tweaks.chartStyle = style;
-    refreshChartStyle();
-  }
-  function refreshChartStyle() {
-    document.querySelectorAll('.series-area').forEach(el => {
-      el.style.display = tweaks.chartStyle === 'area' ? '' : 'none';
-    });
-  }
-
-  document.querySelectorAll('[data-theme]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      tweaks.theme = btn.dataset.theme;
-      applyTheme(tweaks.theme);
-      document.querySelectorAll('[data-theme]').forEach(b => b.classList.toggle('active', b === btn));
-      window.parent.postMessage({ type: '__edit_mode_set_keys', edits: tweaks }, '*');
-    });
-  });
-  document.querySelectorAll('[data-chart]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      applyChartStyle(btn.dataset.chart);
-      document.querySelectorAll('[data-chart]').forEach(b => b.classList.toggle('active', b === btn));
-      window.parent.postMessage({ type: '__edit_mode_set_keys', edits: tweaks }, '*');
-    });
-  });
-
-  applyTheme(tweaks.theme);
-
-  // â”€â”€ SHARE (URL STATE) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  function getState() {
-    return {
-      s: document.getElementById('series-search').value,
-      start: document.getElementById('start-date-search').value,
-      end: document.getElementById('end-date-search').value,
-      m: document.getElementById('mode-select').value,
-      h: document.getElementById('time-horizon-search').value
-    };
-  }
-  function setState(state) {
-    if (state.m) document.getElementById('mode-select').value = state.m;
-    if (state.s) document.getElementById('series-search').value = state.s;
-    if (state.h) document.getElementById('time-horizon-search').value = state.h;
-    if (state.start) document.getElementById('start-date-search').value = state.start;
-    if (state.end) document.getElementById('end-date-search').value = state.end;
-  }
-  function pushState() {
-    try {
-      const s = getState();
-      const hash = btoa(JSON.stringify(s));
-      history.replaceState(null, '', '#' + hash);
-    } catch(e) { /* not available in sandboxed iframe */ }
-  }
-  function loadFromHash() {
-    const hash = location.hash.slice(1);
-    if (!hash) return false;
-    try { return JSON.parse(atob(hash)); } catch { return false; }
-  }
-
-  function showShareCopied() {
-    const btn = document.getElementById('btn-share');
-    btn.textContent = 'âœ“ Copied!';
-    setTimeout(() => { btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="11" cy="2.5" r="1.5" stroke="currentColor" stroke-width="1.4"/><circle cx="11" cy="11.5" r="1.5" stroke="currentColor" stroke-width="1.4"/><circle cx="3" cy="7" r="1.5" stroke="currentColor" stroke-width="1.4"/><path d="M9.5 3.3 4.5 6.2M9.5 10.7 4.5 7.8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg> Share'; }, 2000);
-  }
-  document.getElementById('btn-share').addEventListener('click', () => {
-    pushState();
-    try {
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(location.href).then(showShareCopied).catch(() => showShareCopied());
-      } else {
-        // Fallback
-        const ta = document.createElement('textarea');
-        ta.value = location.href; ta.style.position = 'fixed'; ta.style.opacity = '0';
-        document.body.appendChild(ta); ta.select();
-        document.execCommand('copy'); document.body.removeChild(ta);
-        showShareCopied();
-      }
-    } catch(e) { showShareCopied(); }
-  });
-
-  // Update hash when controls change
-  ['series-search','start-date-search','end-date-search','mode-select','time-horizon-search'].forEach(id => {
-    document.getElementById(id)?.addEventListener('change', pushState);
-  });
-
-  // â”€â”€ PRINT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  document.getElementById('btn-print').addEventListener('click', () => window.print());
-
-  // â”€â”€ HERO STAT UPDATE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  // Mirror gap-wpi-change into hero panel
-  const observer = new MutationObserver(() => {
-    const gap = document.getElementById('gap-wpi-change').textContent;
-    const range = document.getElementById('selected-range').textContent;
-    const label = document.getElementById('primary-stat-label').textContent;
-    const heroStat = document.getElementById('hero-stat');
-    const heroNote = document.getElementById('hero-simple-note');
-    heroStat.textContent = gap;
-    heroStat.classList.remove('metric-positive','metric-negative','metric-neutral');
-    const gapEl = document.getElementById('gap-wpi-change');
-    ['metric-positive','metric-negative','metric-neutral'].forEach(c => { if(gapEl.classList.contains(c)) heroStat.classList.add(c); });
-    const numericGap = Number.parseFloat(gap);
-    if (!Number.isFinite(numericGap)) {
-      document.getElementById('hero-stat-label').textContent = 'No wage comparison is available for this date range.';
-      if (heroNote) heroNote.textContent = 'Try a start date from Dec 2010 onward to compare against wages.';
-      return;
-    }
-    if (numericGap > 0) {
-      document.getElementById('hero-stat-label').textContent = ${label} became harder to afford than wages over .;
-      if (heroNote) heroNote.textContent = 'Its price rose faster than wages over this period.';
-    } else if (numericGap < 0) {
-      document.getElementById('hero-stat-label').textContent = ${label} became easier to afford than wages over .;
-      if (heroNote) heroNote.textContent = 'Its price rose more slowly than wages over this period.';
-    } else {
-      document.getElementById('hero-stat-label').textContent = ${label} moved in line with wages over .;
-      if (heroNote) heroNote.textContent = 'Its price and wages changed by roughly the same amount.';
-    }
-  });
-  observer.observe(document.getElementById('gap-wpi-change'), { childList: true, characterData: true, subtree: true, attributes: true });
-
-  // â”€â”€ CHART TOOLTIPS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  const CHART_MARGIN = { top: 24, right: 26, bottom: 48, left: 68 };
-  const CHART_W = 920, CHART_H = 380;
-
-  function formatQ(dateStr) {
-    const d = new Date(dateStr + 'T00:00:00');
-    return 'Q' + (Math.floor(d.getUTCMonth() / 3) + 1) + ' ' + d.getUTCFullYear();
-  }
-  function formatChangeFromStart(value) {
-    if (!Number.isFinite(value)) return '--';
-    const pct = value - 100;
-    const sign = pct > 0 ? '+' : '';
-    return `${sign}${pct.toFixed(1)}%`;
-  }
-  const toastEl = document.getElementById('chart-toast');
-  let toastTimer = null;
-  function showChartToast(message) {
-    if (!toastEl) return;
-    toastEl.textContent = message;
-    toastEl.classList.add('visible');
-    if (toastTimer) clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => {
-      toastEl.classList.remove('visible');
-    }, 2200);
-  }
-
-  // Store rebased point data for tooltips
-  window._chartData = window._chartData || { cpi: [], wpi: [] };
-
-  // â”€â”€ QUARTER LEGEND TOGGLE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  const qInfoBtn = document.getElementById('q-info-start');
-  const qLegend = document.getElementById('q-legend');
-  if (qInfoBtn && qLegend) {
-    qInfoBtn.addEventListener('click', e => {
-      e.stopPropagation();
-      qLegend.classList.toggle('open');
-    });
-    document.addEventListener('click', () => qLegend.classList.remove('open'));
-  }
-
-  // â”€â”€ SVG MUTATION OBSERVER â€” add area fills when chart renders â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  let _enhancing = false;
-  function enhanceSVG(svgEl) {
-    if (_enhancing) return;
-    _enhancing = true;
-    try {
-      // Remove previous enhancements
-      svgEl.querySelectorAll('.series-area,.baseline-line').forEach(el => el.remove());
-      const lines = svgEl.querySelectorAll('.series-line');
-      if (!lines.length) return;
-      const h = 420, m = CHART_MARGIN; // match app.js height
-      const bottom = h - m.bottom;
-      lines.forEach(line => {
-        const d = line.getAttribute('d');
-        if (!d) return;
-        const nums = d.match(/[-+]?[0-9]*\.?[0-9]+/g);
-        if (!nums || nums.length < 4) return;
-        const firstX = parseFloat(nums[0]);
-        const lastX = parseFloat(nums[nums.length - 2]);
-        const areaD = d + ` L${lastX} ${bottom} L${firstX} ${bottom} Z`;
-        const area = document.createElementNS('http://www.w3.org/2000/svg','path');
-        const cls = line.classList.contains('selected') ? 'selected' : line.classList.contains('cpi') ? 'cpi' : 'wpi';
-        area.setAttribute('class', `series-area ${cls}`);
-        area.setAttribute('d', areaD);
-        svgEl.insertBefore(area, svgEl.firstChild);
-      });
-      refreshChartStyle();
-    } finally {
-      _enhancing = false;
-    }
-  }
-  const svgMutObs = new MutationObserver(muts => {
-    if (_enhancing) return;
-    muts.forEach(m => {
-      if (m.type === 'childList' && m.addedNodes.length) {
-        const hasAppNodes = [...m.addedNodes].some(n => n.classList && !n.classList.contains('series-area') && !n.classList.contains('baseline-line') && !n.classList.contains('crosshair-g'));
-        if (hasAppNodes) enhanceSVG(m.target);
-      }
-    });
-  });
-  ['cpi-chart','wpi-chart'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) svgMutObs.observe(el, { childList: true });
-  });
-
-  function addChartEnhancements(svgEl, tooltipEl, dataKey, seriesColor1, series1Label, seriesColor2, series2Label) {
-    const frame = svgEl.closest('.chart-frame');
-    if (!frame) return;
-
-    svgEl.addEventListener('mousemove', e => {
-      const rect = frame.getBoundingClientRect();
-      const svgRect = svgEl.getBoundingClientRect();
-      const scaleX = CHART_W / svgRect.width;
-      const mx = (e.clientX - svgRect.left) * scaleX;
-      const plotW = CHART_W - CHART_MARGIN.left - CHART_MARGIN.right;
-      const data = window._chartData[dataKey];
-      if (!data || data.length < 2) return;
-
-      const idx = Math.max(0, Math.min(data.length - 1, Math.round((mx - CHART_MARGIN.left) / (plotW / (data.length - 1)))));
-      const pt = data[idx];
-      if (!pt) return;
-
-      const keys = Object.keys(pt).filter(k => k !== 'date');
-      const minV = Math.min(...data.flatMap(p => keys.map(k => p[k]).filter(Number.isFinite)));
-      const maxV = Math.max(...data.flatMap(p => keys.map(k => p[k]).filter(Number.isFinite)));
-      const plotH = CHART_H - CHART_MARGIN.top - CHART_MARGIN.bottom;
-      const xStep = plotW / (data.length - 1);
-      const cx = CHART_MARGIN.left + xStep * idx;
-      const range = maxV - minV || 1;
-
-      const fy = v => CHART_MARGIN.top + plotH - ((v - minV) / range) * plotH;
-
-      // Draw crosshair in SVG
-      let ch = svgEl.querySelector('.crosshair-g');
-      if (!ch) {
-        const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-        g.classList.add('crosshair-g');
-        svgEl.appendChild(g);
-        ch = g;
-      }
-      ch.innerHTML = `<line class="crosshair" x1="${cx}" y1="${CHART_MARGIN.top}" x2="${cx}" y2="${CHART_H - CHART_MARGIN.bottom}"/>`;
-
-      // Tooltip
-      tooltipEl.innerHTML = `<div class="tooltip-date">${formatQ(pt.date)}</div>` +
-        keys.map((k, i) => {
-          const v = pt[k];
-          const col = i === 0 ? seriesColor1 : i === 1 ? seriesColor2 : '#7d4bd1';
-          const lbl = i === 0 ? series1Label : i === 1 ? series2Label : 'WPI';
-          return `<div class="tooltip-row"><span class="tooltip-dot" style="background:${col}"></span>${lbl}<span class="tooltip-val">${formatChangeFromStart(v)}</span></div>`;
-        }).join('') +
-        `<div class="tooltip-note">Change since the selected start date</div>`;
-
-      const tipW = 190;
-      const frameW = frame.offsetWidth;
-      let tx = (e.clientX - rect.left) + 12;
-      if (tx + tipW > frameW - 8) tx = (e.clientX - rect.left) - tipW - 12;
-      tooltipEl.style.left = tx + 'px';
-      tooltipEl.style.top = (e.clientY - rect.top - 40) + 'px';
-      tooltipEl.classList.add('visible');
-    });
-
-    svgEl.addEventListener('mouseleave', () => {
-      tooltipEl.classList.remove('visible');
-      const ch = svgEl.querySelector('.crosshair-g');
-      if (ch) ch.innerHTML = '';
-    });
-  }
-
-  // Set up tooltip listeners after init
-  setTimeout(() => {
-    addChartEnhancements(
-      document.getElementById('cpi-chart'),
-      document.getElementById('cpi-tooltip'),
-      'cpi',
-      getComputedStyle(document.body).getPropertyValue('--blue').trim() || '#0b6ea8',
-      document.getElementById('legend-selected').textContent,
-      '#c9403a', 'All groups CPI'
-    );
-    addChartEnhancements(
-      document.getElementById('wpi-chart'),
-      document.getElementById('wpi-tooltip'),
-      'wpi',
-      getComputedStyle(document.body).getPropertyValue('--blue').trim() || '#0b6ea8',
-      document.getElementById('wpi-legend-selected').textContent,
-      '#7d4bd1', 'All sector WPI'
-    );
-  }, 600);
-
-  // â”€â”€ CHART DOWNLOAD PNG â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  function downloadChartPng(svgId, filename) {
-    const svg = document.getElementById(svgId);
-    if (!svg || !svg.innerHTML.trim()) { showChartToast('No chart is ready to download yet.'); return; }
-    const serializer = new XMLSerializer();
-    const source = '<?xml version="1.0" standalone="no"?>\n' +
-      serializer.serializeToString(svg).replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg" style="background:#f7faf8;font-family:sans-serif"');
-    const blob = new Blob([source], { type: 'image/svg+xml' });
-    const url = URL.createObjectURL(blob);
-    const img = new Image();
-    img.onload = () => {
-      const scale = 2;
-      const c = document.createElement('canvas');
-      c.width = svg.viewBox.baseVal.width * scale;
-      c.height = svg.viewBox.baseVal.height * scale;
-      const ctx = c.getContext('2d');
-      ctx.fillStyle = '#f7faf8';
-      ctx.fillRect(0, 0, c.width, c.height);
-      ctx.scale(scale, scale);
-      ctx.drawImage(img, 0, 0);
-      URL.revokeObjectURL(url);
-      const startDownload = (href) => {
-        const a = document.createElement('a');
-        a.download = filename + '.png';
-        a.href = href;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        showChartToast('PNG download started.');
-      };
-      if (c.toBlob) {
-        c.toBlob((pngBlob) => {
-          if (!pngBlob) {
-            showChartToast('Download failed. Please try again.');
-            return;
-          }
-          const dlUrl = URL.createObjectURL(pngBlob);
-          startDownload(dlUrl);
-          setTimeout(() => URL.revokeObjectURL(dlUrl), 1200);
-        }, 'image/png');
-      } else {
-        startDownload(c.toDataURL('image/png'));
-      }
-    };
-    img.src = url;
-  }
-
-  document.getElementById('dl-btn-cpi').addEventListener('click', () => downloadChartPng('cpi-chart', 'cis-price-vs-cpi'));
-  document.getElementById('dl-btn-wpi').addEventListener('click', () => downloadChartPng('wpi-chart', 'cis-price-vs-wpi'));
-
-  // â”€â”€ CHART NOTES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  let noteCounts = { cpi: 0, wpi: 0 };
-
-  function addChartNote(chartKey) {
-    const chartLabel = chartKey === 'wpi' ? 'wage comparison chart' : 'inflation comparison chart';
-    const text = window.prompt(Add a note for the :);
-    if (text === null) return;
-    const note = text.trim();
-    if (!note) {
-      showChartToast('No note was added.');
-      return;
-    }
-    noteCounts[chartKey] += 1;
-    const notesWrap = document.getElementById(`${chartKey}-chart-notes`);
-    if (!notesWrap) return;
-    const pill = document.createElement('div');
-    pill.className = 'chart-note';
-    pill.innerHTML = <strong>Note :</strong>;
-    notesWrap.appendChild(pill);
-    showChartToast('Note added below the chart.');
-  }
-
-  document.getElementById('anno-btn-cpi').addEventListener('click', () => addChartNote('cpi'));
-  document.getElementById('anno-btn-wpi').addEventListener('click', () => addChartNote('wpi'));
 
   // â”€â”€ LOAD STATE FROM HASH â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   window.addEventListener('load', () => {
@@ -1483,6 +1073,7 @@
   </script>
 </body>
 </html>
+
 
 
 
