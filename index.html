@@ -206,7 +206,7 @@
       border-radius: var(--r-lg);
       padding: 24px 28px;
       display: grid;
-      grid-template-columns: minmax(0, 1.4fr) minmax(0, 1.35fr) repeat(3, minmax(0, 0.65fr));
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.7fr) repeat(3, minmax(0, 0.7fr));
       gap: 18px;
       margin-bottom: 24px;
       transition: background 0.35s;
@@ -218,24 +218,6 @@
       font-size: 0.78rem; font-weight: 700;
       letter-spacing: 0.03em; color: var(--muted);
       text-transform: uppercase;
-    }
-    .brand-select-wrap {
-      position: relative;
-    }
-    .brand-select-wrap select {
-      padding-left: 60px;
-    }
-    .brand-select-logo {
-      position: absolute;
-      left: 16px;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 22px;
-      height: 22px;
-      pointer-events: none;
-    }
-    .control-group-wide {
-      grid-column: span 2;
     }
     .ctrl-group select {
       min-height: 44px; padding: 0 14px;
@@ -275,6 +257,12 @@
     .quarter-legend td { padding: 3px 10px 3px 0; color: var(--muted); }
     .quarter-legend td:first-child { font-weight: 800; color: var(--ink); }
     .ctrl-group { position: relative; }
+    .field-help {
+      font-size: 0.78rem;
+      color: var(--muted);
+      line-height: 1.4;
+      white-space: nowrap;
+    }
 
     /* â”€â”€ BASKET â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
     .basket-card {
@@ -719,7 +707,6 @@
     @media (max-width: 860px) {
       .hero-inner { grid-template-columns: 1fr !important; }
       .controls-card { grid-template-columns: 1fr 1fr; }
-      .control-group-wide { grid-column: span 1; }
       .stats-grid { grid-template-columns: repeat(2, 1fr); }
     }
     @media (max-width: 640px) {
@@ -732,6 +719,7 @@
       .controls-card { padding: 18px 16px; }
       .chart-card { padding: 20px 16px 18px; }
       .shell { padding: 20px 0 48px; }
+      .field-help { white-space: normal; }
     }
     @media (max-width: 420px) {
       .stat-card { padding: 16px 14px; }
@@ -802,15 +790,9 @@
           <option value="basket">Custom basket</option>
         </select>
       </div>
-      <div class="ctrl-group control-group control-group-wide" id="series-group">
+      <div class="ctrl-group control-group" id="series-group">
         <label class="ctrl-label" for="series-search">What do you want to check?</label>
-        <div class="brand-select-wrap">
-          <svg class="brand-select-logo" viewBox="0 0 40 40" aria-hidden="true">
-            <circle cx="20" cy="20" r="18" fill="#0e6b5c"></circle>
-            <text x="20" y="26" text-anchor="middle" font-family="Georgia, serif" font-size="15" fill="#ffffff">CIS</text>
-          </svg>
-          <select id="series-search"></select>
-        </div>
+        <select id="series-search"></select>
         <p id="selection-meta" class="field-help">Choose a good or a broader group from the ABS list.</p>
       </div>
       <div class="ctrl-group control-group">

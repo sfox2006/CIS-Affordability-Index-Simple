@@ -148,7 +148,7 @@ function fillSelect(select, options, formatter = (option) => option.label) {
 function populateSeriesSelect() {
   const options = getAvailableSeries().map((series) => ({
     value: series.seriesId,
-    label: `${series.label} (${series.seriesId})`,
+    label: series.label,
   }));
   fillSelect(elements.seriesSelect, options);
 }
@@ -531,7 +531,7 @@ function renderBasketRows() {
     const select = document.createElement("select");
     const options = getAvailableSeries().map((series) => ({
       value: series.seriesId,
-      label: `${series.label} (${series.seriesId})`,
+      label: series.label,
     }));
     fillSelect(select, options);
     select.value = row.seriesId;
