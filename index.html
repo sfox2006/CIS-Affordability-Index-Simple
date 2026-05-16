@@ -627,6 +627,25 @@
       opacity: 1;
       transform: translateY(0);
     }
+    .chart-notes {
+      margin-top: 14px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .chart-note {
+      background: var(--surface2);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-size: 0.78rem;
+      color: var(--ink);
+      line-height: 1.35;
+    }
+    .chart-note strong {
+      color: var(--cg);
+      margin-right: 6px;
+    }
 
     /* Crosshair */
     .crosshair { stroke: rgba(22,54,47,0.18); stroke-width: 1; stroke-dasharray: 3 3; pointer-events: none; }
@@ -986,6 +1005,7 @@
           <svg id="cpi-chart" viewBox="0 0 920 420" role="img" aria-label="Line chart: selected good vs CPI"></svg>
           <div class="chart-tooltip" id="cpi-tooltip"></div>
         </div>
+        <div class="chart-notes" id="cpi-chart-notes"></div>
       </article>
 
       <article class="chart-card">
@@ -1016,6 +1036,7 @@
           <svg id="wpi-chart" viewBox="0 0 920 420" role="img" aria-label="Line chart: selected good vs WPI"></svg>
           <div class="chart-tooltip" id="wpi-tooltip"></div>
         </div>
+        <div class="chart-notes" id="wpi-chart-notes"></div>
         <p id="empty-state" class="empty-state">Pick a good or group to compare its price with wages.</p>
       </article>
 
@@ -1395,11 +1416,28 @@
       ctx.scale(scale, scale);
       ctx.drawImage(img, 0, 0);
       URL.revokeObjectURL(url);
-      const a = document.createElement('a');
-      a.download = filename + '.png';
-      a.href = c.toDataURL('image/png');
-      a.click();
-      showChartToast('PNG download started.');
+      const startDownload = (href) => {
+        const a = document.createElement('a');
+        a.download = filename + '.png';
+        a.href = href;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        showChartToast('PNG download started.');
+      };
+      if (c.toBlob) {
+        c.toBlob((pngBlob) => {
+          if (!pngBlob) {
+            showChartToast('Download failed. Please try again.');
+            return;
+          }
+          const dlUrl = URL.createObjectURL(pngBlob);
+          startDownload(dlUrl);
+          setTimeout(() => URL.revokeObjectURL(dlUrl), 1200);
+        }, 'image/png');
+      } else {
+        startDownload(c.toDataURL('image/png'));
+      }
     };
     img.src = url;
   }
@@ -1407,104 +1445,30 @@
   document.getElementById('dl-btn-cpi').addEventListener('click', () => downloadChartPng('cpi-chart', 'cis-price-vs-cpi'));
   document.getElementById('dl-btn-wpi').addEventListener('click', () => downloadChartPng('wpi-chart', 'cis-price-vs-wpi'));
 
-  // â”€â”€ ANNOTATIONS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  let annoMode = null;
-  let annoCounts = { cpi: 0, wpi: 0 };
+  // â”€â”€ CHART NOTES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  let noteCounts = { cpi: 0, wpi: 0 };
 
-  function setupAnnoMode(chartKey) {
-    const svgId = chartKey + '-chart';
-    const frameId = chartKey + '-chart-frame';
-    const svgEl = document.getElementById(svgId);
-    const frame = document.getElementById(frameId);
-
-    if (annoMode === chartKey) {
-      // toggle off
-      annoMode = null;
-      document.getElementById('anno-btn-' + chartKey).classList.remove('active');
-      frame.style.cursor = '';
-      showChartToast('Annotation mode turned off.');
+  function addChartNote(chartKey) {
+    const chartLabel = chartKey === 'wpi' ? 'wage comparison chart' : 'inflation comparison chart';
+    const text = window.prompt(Add a note for the :);
+    if (text === null) return;
+    const note = text.trim();
+    if (!note) {
+      showChartToast('No note was added.');
       return;
     }
-    annoMode = chartKey;
-    document.querySelectorAll('.chart-action-btn[id^=anno-btn]').forEach(b => b.classList.remove('active'));
-    document.getElementById('anno-btn-' + chartKey).classList.add('active');
-    frame.style.cursor = 'crosshair';
-    showChartToast('Click anywhere on the chart to place a note.');
-
-    function onFrameClick(e) {
-      if (!annoMode) return;
-      const rect = frame.getBoundingClientRect();
-      const px = e.clientX - rect.left;
-      const py = e.clientY - rect.top;
-
-      // Remove existing input
-      frame.querySelectorAll('.anno-input-wrap').forEach(el => el.remove());
-
-      const wrap = document.createElement('div');
-      wrap.className = 'anno-input-wrap';
-      const leftPct = px / frame.offsetWidth * 100;
-      wrap.style.left = (leftPct > 60 ? '' : px + 12) + 'px';
-      if (leftPct > 60) wrap.style.right = (frame.offsetWidth - px + 12) + 'px';
-      wrap.style.top = Math.max(4, py - 60) + 'px';
-
-      const txt = document.createElement('textarea');
-      txt.className = 'anno-input';
-      txt.rows = 2;
-      txt.placeholder = 'Add a noteâ€¦';
-
-      const acts = document.createElement('div');
-      acts.className = 'anno-actions';
-
-      const save = document.createElement('button');
-      save.className = 'anno-save'; save.textContent = 'Save';
-
-      const cancel = document.createElement('button');
-      cancel.className = 'anno-cancel'; cancel.textContent = 'Cancel';
-
-      acts.append(cancel, save);
-      wrap.append(txt, acts);
-      frame.appendChild(wrap);
-      txt.focus();
-
-      save.addEventListener('click', () => {
-        const note = txt.value.trim();
-        wrap.remove();
-        if (!note) return;
-        annoCounts[chartKey]++;
-        const n = annoCounts[chartKey];
-        const marker = document.createElement('div');
-        marker.className = 'anno-marker';
-        marker.textContent = n;
-        marker.style.left = px + 'px';
-        marker.style.top = py + 'px';
-        marker.title = note;
-        marker.addEventListener('click', e2 => {
-          e2.stopPropagation();
-          alert('Note ' + n + ': ' + note);
-        });
-        frame.appendChild(marker);
-        annoMode = null;
-        document.getElementById('anno-btn-' + chartKey).classList.remove('active');
-        frame.style.cursor = '';
-        frame.removeEventListener('click', onFrameClick);
-      });
-
-      cancel.addEventListener('click', () => {
-        wrap.remove();
-        annoMode = null;
-        document.getElementById('anno-btn-' + chartKey).classList.remove('active');
-        frame.style.cursor = '';
-        frame.removeEventListener('click', onFrameClick);
-      });
-
-      e.stopPropagation();
-    }
-
-    frame.addEventListener('click', onFrameClick);
+    noteCounts[chartKey] += 1;
+    const notesWrap = document.getElementById(`${chartKey}-chart-notes`);
+    if (!notesWrap) return;
+    const pill = document.createElement('div');
+    pill.className = 'chart-note';
+    pill.innerHTML = <strong>Note :</strong>;
+    notesWrap.appendChild(pill);
+    showChartToast('Note added below the chart.');
   }
 
-  document.getElementById('anno-btn-cpi').addEventListener('click', () => setupAnnoMode('cpi'));
-  document.getElementById('anno-btn-wpi').addEventListener('click', () => setupAnnoMode('wpi'));
+  document.getElementById('anno-btn-cpi').addEventListener('click', () => addChartNote('cpi'));
+  document.getElementById('anno-btn-wpi').addEventListener('click', () => addChartNote('wpi'));
 
   // â”€â”€ LOAD STATE FROM HASH â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   window.addEventListener('load', () => {
@@ -1519,5 +1483,6 @@
   </script>
 </body>
 </html>
+
 
 
